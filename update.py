@@ -11,7 +11,7 @@ import goodreads.book
 def get_shelfari_books():
     """Read the exported book list."""
 
-    books = {}
+    books = {'isbn': {}, 'title': {}}
 
     with open('My_Shelfari_Books.tsv', 'rb') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -20,7 +20,8 @@ def get_shelfari_books():
                    .format(row['ISBN'],
                            row['Title'].decode('utf-8')))
 
-            books[row['ISBN']] = {
+            book = {
+                'isbn': row['ISBN'],
                 'title': row['Title'],
                 'plan_to_read': row['Plan To Read'],
                 'reading': row['Currently Reading'],
@@ -28,6 +29,10 @@ def get_shelfari_books():
                 'date_read': row['Date Read'],
                 'rating': row['My Rating']
             }
+
+            books['isbn'][row['ISBN']] = book
+            books['title'][row['Title']] = book
+
 
     return books
 
@@ -146,7 +151,7 @@ def compare_books(gc, sbook, gbook):
                       sbook['rating'], shelf)
 
 def update_all(gc, shelfari, goodreads):
-    for isbn, shelfari_book in shelfari.iteritems():
+    for isbn, shelfari_book in shelfari['isbn'].iteritems():
         try:
             goodreads_book = goodreads[isbn]
         except KeyError:
