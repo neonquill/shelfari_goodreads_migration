@@ -15,7 +15,8 @@ def get_shelfari_books():
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['Read']:
-                books[row['Title']] = {
+                books[row['ISBN']] = {
+                    'title': row['Title'],
                     'date_read': row['Date Read'],
                     'rating': row['My Rating']
                 }
@@ -45,17 +46,43 @@ def get_goodreads_books(gc):
 
     resp = gc.session.get("review/list.xml", {'v': 2, 'per_page': 2})
     # @start, @end, @total.
-    reviews = [goodreads.review.GoodreadsReview(r)
-               for r in resp['reviews']['review']]
-    for r in reviews:
-        book = goodreads.book.GoodreadsBook(r.book, gc)
+
+    for r in resp['reviews']['review']:
+        review = goodreads.review.GoodreadsReview(r)
+        print r
+        book = goodreads.book.GoodreadsBook(review.book, gc)
         if book.title in books:
-            print "!!!! Duplidate book: {}".format(book.title)
-        books[book.title] = {
-            'rating': r.rating
+            print "!!!! Duplicate book: {}".format(book.title)
+        print "111 Shelfari book: {}".format(book.title)
+        books[book.isbn] = {
+            'review_id': review.gid,
+            'read_at': review.read_at,
+            'title': book.title,
+            'rating': review.rating
         }
+
+    return books
+
+def compare_books(gc, sbook, gbook):
+    if sbook['date_read'] != gbook['read_at']:
+        print "  Read: {} != {}.".format(sbook['date_read'], gbook['read_at'])
+    if sbook['rating'] != gbook['rating']:
+        print "  Rating: {} != {}.".format(sbook['rating'], gbook['rating'])
+
+def update_all(gc, shelfari, goodreads):
+    for isbn, shelfari_book in shelfari.iteritems():
+        try:
+            goodreads_book = goodreads[isbn]
+        except KeyError:
+            print "!!!! Missing book: {}".format(shelfari_book['title'])
+            continue
+
+        print "Found book: {}".format(shelfari_book['title'])
+        compare_books(gc, shelfari_book, goodreads_book)
 
 # main
 gc = goodreads_connect()
 shelfari = get_shelfari_books()
 goodreads = get_goodreads_books(gc)
+
+update_all(gc, shelfari, goodreads)
