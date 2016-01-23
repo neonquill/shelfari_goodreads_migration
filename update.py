@@ -15,7 +15,10 @@ def get_shelfari_books():
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['Read']:
-                books[row['Title']] = row['Date Read']
+                books[row['Title']] = {
+                    'date_read': row['Date Read'],
+                    'rating': row['My Rating']
+                }
 
     return books
 
@@ -35,14 +38,24 @@ def goodreads_connect():
 
     return gc
 
-def process_goodreads_reviews():
+def get_goodreads_books(gc):
+    """Get the reviews from goodreads."""
+
+    books = {}
+
     resp = gc.session.get("review/list.xml", {'v': 2, 'per_page': 2})
     # @start, @end, @total.
     reviews = [goodreads.review.GoodreadsReview(r)
                for r in resp['reviews']['review']]
     for r in reviews:
         book = goodreads.book.GoodreadsBook(r.book, gc)
-        print book.title, r.rating
+        if book.title in books:
+            print "!!!! Duplidate book: {}".format(book.title)
+        books[book.title] = {
+            'rating': r.rating
+        }
 
+# main
+gc = goodreads_connect()
 shelfari = get_shelfari_books()
-print shelfari
+goodreads = get_goodreads_books(gc)
