@@ -63,7 +63,8 @@ def get_goodreads_books(gc):
             book = goodreads.book.GoodreadsBook(review.book, gc)
             if book.title in books:
                 print "!!!! Duplicate book: {}".format(book.title)
-            # print "111 Shelfari book: {}".format(book.title)
+
+            # print u"111 Shelfari book: {}".format(book.title)
 
             try:
                 read_at = (arrow.get(review.read_at,
@@ -74,7 +75,7 @@ def get_goodreads_books(gc):
                 read_at = ''
 
             if not isinstance(book.isbn, basestring):
-                print "!!!! Unknown ISBN for {}".format(book.title)
+                print u"!!!! Unknown ISBN for {}".format(book.title)
                 continue
 
             books[book.isbn] = {
