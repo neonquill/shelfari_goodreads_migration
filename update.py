@@ -85,8 +85,8 @@ def get_goodreads_books(gc):
                 'rating': review.rating
             }
 
-        print resp['@end'], resp['@total']
-        if resp['@end'] == resp['@total']:
+        print resp['reviews']['@end'], resp['reviews']['@total']
+        if resp['reviews']['@end'] == resp['reviews']['@total']:
             break
 
     return books
