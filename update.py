@@ -16,12 +16,18 @@ def get_shelfari_books():
     with open('My_Shelfari_Books.tsv', 'rb') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
-            if row['Read']:
-                books[row['ISBN']] = {
-                    'title': row['Title'],
-                    'date_read': row['Date Read'],
-                    'rating': row['My Rating']
-                }
+            print (u"1111 Shelfari book: {} ({})"
+                   .format(row['ISBN'],
+                           row['Title'].decode('utf-8')))
+
+            books[row['ISBN']] = {
+                'title': row['Title'],
+                'plan_to_read': row['Plan To Read'],
+                'reading': row['Currently Reading'],
+                'read': row['Read'],
+                'date_read': row['Date Read'],
+                'rating': row['My Rating']
+            }
 
     return books
 
@@ -64,7 +70,7 @@ def get_goodreads_books(gc):
             if book.title in books:
                 print "!!!! Duplicate book: {}".format(book.title)
 
-            # print u"111 Shelfari book: {}".format(book.title)
+            print u"2222 Goodreads book: {} ({})".format(book.isbn, book.title)
 
             try:
                 read_at = (arrow.get(review.read_at,
