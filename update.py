@@ -35,6 +35,7 @@ def get_shelfari_books():
             book = {
                 'isbn': isbn,
                 'title': row['Title'],
+                'author': row['Author'],
                 'plan_to_read': row['Plan To Read'],
                 'reading': row['Currently Reading'],
                 'read': row['Read'],
@@ -112,11 +113,13 @@ def get_goodreads_books(gc):
             else:
                 isbn = book.isbn
 
+            authors = [a.name.encode('ascii', 'ignore') for a in book.authors]
             my_book = {
                 'isbn': isbn,
                 'review_id': review.gid,
                 'read_at': read_at,
                 'title': book.title,
+                'author': ', '.join(authors),
                 'rating': review.rating
             }
 
@@ -181,8 +184,15 @@ def compare_books(gc, sbook, gbook):
         update_review(gc, gbook['review_id'], sbook['date_read'],
                       sbook['rating'], shelf)
 
-def find_by_title(title, choices):
-    print fuzzywuzzy.process.extract(title, choices)
+def find_by_title(sbook, choices, goodreads):
+    print "Looking for {} by {}:".format(sbook['title'], sbook['author'])
+
+    choices = fuzzywuzzy.process.extract(sbook['title'], choices)
+    for c in choices:
+        goodreads_title = c[0]
+        score = c[1]
+        gbook = goodreads['title'][goodreads_title]
+        print u"  {}: {} by {}".format(score, gbook['title'], gbook['author'])
 
 def update_all(gc, shelfari, goodreads):
     all_goodreads_titles = goodreads['title'].keys()
@@ -193,7 +203,7 @@ def update_all(gc, shelfari, goodreads):
         except KeyError:
             print "!!!! Missing book: {} ({})".format(isbn,
                                                       shelfari_book['title'])
-            find_by_title(shelfari_book['title'], all_goodreads_titles)
+            find_by_title(shelfari_book, all_goodreads_titles, goodreads)
             continue
 
         # print "Found book: {}".format(shelfari_book['title'])
