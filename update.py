@@ -12,6 +12,7 @@ def get_shelfari_books():
     """Read the exported book list."""
 
     books = {'isbn': {}, 'title': {}}
+    dummy_isbn = 0
 
     with open('My_Shelfari_Books.tsv', 'rb') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -20,8 +21,14 @@ def get_shelfari_books():
                    .format(row['ISBN'],
                            row['Title'].decode('utf-8')))
 
+            if row['ISBN']:
+                isbn = row['ISBN']
+            else:
+                isbn = dummy_isbn
+                dummy_isbn += 1
+
             book = {
-                'isbn': row['ISBN'],
+                'isbn': isbn,
                 'title': row['Title'],
                 'plan_to_read': row['Plan To Read'],
                 'reading': row['Currently Reading'],
@@ -30,7 +37,12 @@ def get_shelfari_books():
                 'rating': row['My Rating']
             }
 
-            books['isbn'][row['ISBN']] = book
+            if isbn in books['isbn']:
+                print "!!!! Duplicate S isbn: {}".format(isbn)
+            books['isbn'][isbn] = book
+
+            if row['Title'] in books['title']:
+                print u"!!!! Duplicate S title: {}".format(row['Title'])
             books['title'][row['Title']] = book
 
 
