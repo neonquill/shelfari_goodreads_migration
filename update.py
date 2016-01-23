@@ -3,6 +3,7 @@
 import csv
 import ConfigParser
 import arrow
+import time
 import goodreads.client
 import goodreads.review
 import goodreads.book
@@ -45,29 +46,47 @@ def get_goodreads_books(gc):
 
     books = {}
 
-    resp = gc.session.get("review/list.xml", {'v': 2, 'per_page': 2})
-    # @start, @end, @total.
-
-    for r in resp['reviews']['review']:
-        review = goodreads.review.GoodreadsReview(r)
-        print r
-        book = goodreads.book.GoodreadsBook(review.book, gc)
-        if book.title in books:
-            print "!!!! Duplicate book: {}".format(book.title)
-        print "111 Shelfari book: {}".format(book.title)
-
-        try:
-            read_at = arrow.get(review.read_at,
-                                'MMM DD HH:mm:ss Z YYYY').format('YYYY-MM-DD')
-        except TypeError:
-            read_at = ''
-
-        books[book.isbn] = {
-            'review_id': review.gid,
-            'read_at': read_at,
-            'title': book.title,
-            'rating': review.rating
+    page = 0
+    while True:
+        page += 1
+        params = {
+            'v': 2,
+            'per_page': 200,
+            'page': page
         }
+        resp = gc.session.get("review/list.xml", params)
+        # @start, @end, @total.
+
+        for r in resp['reviews']['review']:
+            review = goodreads.review.GoodreadsReview(r)
+            # print r
+            book = goodreads.book.GoodreadsBook(review.book, gc)
+            if book.title in books:
+                print "!!!! Duplicate book: {}".format(book.title)
+            # print "111 Shelfari book: {}".format(book.title)
+
+            try:
+                read_at = (arrow.get(review.read_at,
+                                     'MMM DD HH:mm:ss Z YYYY')
+                           .format('YYYY-MM-DD'))
+
+            except TypeError:
+                read_at = ''
+
+            if not isinstance(book.isbn, basestring):
+                print "!!!! Unknown ISBN for {}".format(book.title)
+                continue
+
+            books[book.isbn] = {
+                'review_id': review.gid,
+                'read_at': read_at,
+                'title': book.title,
+                'rating': review.rating
+            }
+
+        print resp['@end'], resp['@total']
+        if resp['@end'] == resp['@total']:
+            break
 
     return books
 
@@ -85,6 +104,9 @@ def update_review(gc, review_id, date_read, rating):
     resp = gc.session.session.post(base + path, params=params, data={})
     print "Sent update"
     print resp
+
+    # Make sure we don't send too fast.
+    time.sleep(1)
 
 def compare_books(gc, sbook, gbook):
     need_update = False
@@ -106,7 +128,7 @@ def update_all(gc, shelfari, goodreads):
         try:
             goodreads_book = goodreads[isbn]
         except KeyError:
-            #print "!!!! Missing book: {}".format(shelfari_book['title'])
+            print "!!!! Missing book: {}".format(shelfari_book['title'])
             continue
 
         print "Found book: {}".format(shelfari_book['title'])
