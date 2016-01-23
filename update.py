@@ -98,14 +98,15 @@ def get_goodreads_books(gc):
 
     return books
 
-def update_review(gc, review_id, date_read, rating):
+def update_review(gc, review_id, date_read, rating, shelf):
     params = {
         'id': review_id,
         'review[rating]': rating,
         'review[read_at]': date_read,
         'finished': 'true',
-        'shelf': 'read'
+        'shelf': shelf
     }
+
     # XXX Hack because the goodreads lib doesn't support put requests.
     base = "http://www.goodreads.com/"
     path = "review/{}.xml".format(review_id)
@@ -121,12 +122,12 @@ def compare_books(gc, sbook, gbook):
     diff = []
 
     if sbook['date_read'] != gbook['read_at']:
-        diff.push("  Read: {} != {}.".format(sbook['date_read'],
-                                             gbook['read_at']))
+        diff.append("  Read: {} != {}.".format(sbook['date_read'],
+                                               gbook['read_at']))
         need_update = True
 
     if sbook['rating'] != gbook['rating']:
-        diff.push("  Rating: {} != {}.".format(sbook['rating'],
+        diff.append("  Rating: {} != {}.".format(sbook['rating'],
                                                gbook['rating']))
         need_update = True
 
@@ -134,8 +135,15 @@ def compare_books(gc, sbook, gbook):
         print "Updating book: {}".format(sbook['title'])
         for line in diff:
             print line
+
+        shelf = 'to-read'
+        if sbook['reading']:
+            shelf = 'currently-reading'
+        if sbook['read']:
+            shelf = 'read'
+
         update_review(gc, gbook['review_id'], sbook['date_read'],
-                      sbook['rating'])
+                      sbook['rating'], shelf)
 
 def update_all(gc, shelfari, goodreads):
     for isbn, shelfari_book in shelfari.iteritems():
