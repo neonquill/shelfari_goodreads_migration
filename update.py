@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import csv
 import ConfigParser
 import arrow
@@ -188,11 +189,33 @@ def find_by_title(sbook, choices, goodreads):
     print "Looking for {} by {}:".format(sbook['title'], sbook['author'])
 
     choices = fuzzywuzzy.process.extract(sbook['title'], choices)
+    count = 0
     for c in choices:
         goodreads_title = c[0]
         score = c[1]
         gbook = goodreads['title'][goodreads_title]
-        print u"  {}: {} by {}".format(score, gbook['title'], gbook['author'])
+        print u"  {}: Score {}, {} by {}".format(count, score,
+                                                 gbook['title'],
+                                                 gbook['author'])
+        count += 1
+
+    while True:
+        input = raw_input("Pick match ([n]ext or [q]uit): ")
+        if input == 'n' or input == 'next':
+            return None
+        elif input == 'q' or input == 'quit':
+            sys.exit()
+        else:
+            try:
+                num = int(input)
+            except ValueError:
+                next
+
+            if num >= count:
+                print "Invalid choice ({})".format(num)
+                continue
+
+            return choices[num][0]
 
 def update_all(gc, shelfari, goodreads):
     all_goodreads_titles = goodreads['title'].keys()
@@ -203,8 +226,12 @@ def update_all(gc, shelfari, goodreads):
         except KeyError:
             print "!!!! Missing book: {} ({})".format(isbn,
                                                       shelfari_book['title'])
-            find_by_title(shelfari_book, all_goodreads_titles, goodreads)
-            continue
+            gtitle = find_by_title(shelfari_book, all_goodreads_titles,
+                                   goodreads)
+            if gtitle:
+                goodreads_book = goodreads['title'][gtitle]
+            else:
+                continue
 
         # print "Found book: {}".format(shelfari_book['title'])
         compare_books(gc, shelfari_book, goodreads_book)
