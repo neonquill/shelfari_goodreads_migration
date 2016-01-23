@@ -8,11 +8,15 @@ import goodreads.client
 import goodreads.review
 import goodreads.book
 
+# XXX Make sure we never end up with duplicate dummy isbns.
+dummy_isbn = 0
+
 def get_shelfari_books():
     """Read the exported book list."""
 
+    global dummy_isbn
+
     books = {'isbn': {}, 'title': {}}
-    dummy_isbn = 0
 
     with open('My_Shelfari_Books.tsv', 'rb') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -67,7 +71,9 @@ def goodreads_connect():
 def get_goodreads_books(gc):
     """Get the reviews from goodreads."""
 
-    books = {}
+    global dummy_isbn
+
+    books = {'isbn': {}, 'title': {}}
 
     page = 0
     while True:
@@ -100,14 +106,26 @@ def get_goodreads_books(gc):
 
             if not isinstance(book.isbn, basestring):
                 print u"!!!! Unknown ISBN for {}".format(book.title)
-                continue
+                isbn = dummy_isbn
+                dummy_isbn += 1
+            else:
+                isbn = book.isbn
 
-            books[book.isbn] = {
+            my_book = {
+                'isbn': isbn,
                 'review_id': review.gid,
                 'read_at': read_at,
                 'title': book.title,
                 'rating': review.rating
             }
+
+            if isbn in books['isbn']:
+                print "!!!! Duplicate G isbn: {}".format(isbn)
+            books['isbn'][isbn] = my_book
+
+            if book.title in books['title']:
+                print u"!!!! Duplicate G title: {}".format(book.title)
+            books['title'][book.title] = my_book
 
         # print resp['reviews']['@end'], resp['reviews']['@total']
         if resp['reviews']['@end'] == resp['reviews']['@total']:
@@ -165,7 +183,7 @@ def compare_books(gc, sbook, gbook):
 def update_all(gc, shelfari, goodreads):
     for isbn, shelfari_book in shelfari['isbn'].iteritems():
         try:
-            goodreads_book = goodreads[isbn]
+            goodreads_book = goodreads['isbn'][isbn]
         except KeyError:
             print "!!!! Missing book: {} ({})".format(isbn,
                                                       shelfari_book['title'])
