@@ -85,7 +85,7 @@ def get_goodreads_books(gc):
                 'rating': review.rating
             }
 
-        print resp['reviews']['@end'], resp['reviews']['@total']
+        # print resp['reviews']['@end'], resp['reviews']['@total']
         if resp['reviews']['@end'] == resp['reviews']['@total']:
             break
 
@@ -111,16 +111,22 @@ def update_review(gc, review_id, date_read, rating):
 
 def compare_books(gc, sbook, gbook):
     need_update = False
+    diff = []
 
     if sbook['date_read'] != gbook['read_at']:
-        print "  Read: {} != {}.".format(sbook['date_read'], gbook['read_at'])
+        diff.push("  Read: {} != {}.".format(sbook['date_read'],
+                                             gbook['read_at']))
         need_update = True
 
     if sbook['rating'] != gbook['rating']:
-        print "  Rating: {} != {}.".format(sbook['rating'], gbook['rating'])
+        diff.push("  Rating: {} != {}.".format(sbook['rating'],
+                                               gbook['rating']))
         need_update = True
 
     if need_update:
+        print "Updating book: {}".format(sbook['title'])
+        for line in diff:
+            print line
         update_review(gc, gbook['review_id'], sbook['date_read'],
                       sbook['rating'])
 
@@ -129,10 +135,11 @@ def update_all(gc, shelfari, goodreads):
         try:
             goodreads_book = goodreads[isbn]
         except KeyError:
-            print "!!!! Missing book: {}".format(shelfari_book['title'])
+            print "!!!! Missing book: {} ({})".format(isbn,
+                                                      shelfari_book['title'])
             continue
 
-        print "Found book: {}".format(shelfari_book['title'])
+        # print "Found book: {}".format(shelfari_book['title'])
         compare_books(gc, shelfari_book, goodreads_book)
 
 # main
