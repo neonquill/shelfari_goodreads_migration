@@ -2,6 +2,7 @@
 
 import csv
 import ConfigParser
+import arrow
 import goodreads.client
 import goodreads.review
 import goodreads.book
@@ -54,9 +55,16 @@ def get_goodreads_books(gc):
         if book.title in books:
             print "!!!! Duplicate book: {}".format(book.title)
         print "111 Shelfari book: {}".format(book.title)
+
+        try:
+            read_at = arrow.get(review.read_at,
+                                'MMM DD HH:mm:ss Z YYYY').format('YYYY-MM-DD')
+        except TypeError:
+            read_at = ''
+
         books[book.isbn] = {
             'review_id': review.gid,
-            'read_at': review.read_at,
+            'read_at': read_at,
             'title': book.title,
             'rating': review.rating
         }
