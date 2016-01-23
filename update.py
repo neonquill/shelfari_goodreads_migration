@@ -63,18 +63,42 @@ def get_goodreads_books(gc):
 
     return books
 
+def update_review(gc, review_id, date_read, rating):
+    params = {
+        'id': review_id,
+        'review[rating]': rating,
+        'review[read_at]': date_read,
+        'finished': 'true',
+        'shelf': 'read'
+    }
+    # XXX Hack because the goodreads lib doesn't support put requests.
+    base = "http://www.goodreads.com/"
+    path = "review/{}.xml".format(review_id)
+    resp = gc.session.session.post(base + path, params=params, data={})
+    print "Sent update"
+    print resp
+
 def compare_books(gc, sbook, gbook):
+    need_update = False
+
     if sbook['date_read'] != gbook['read_at']:
         print "  Read: {} != {}.".format(sbook['date_read'], gbook['read_at'])
+        need_update = True
+
     if sbook['rating'] != gbook['rating']:
         print "  Rating: {} != {}.".format(sbook['rating'], gbook['rating'])
+        need_update = True
+
+    if need_update:
+        update_review(gc, gbook['review_id'], sbook['date_read'],
+                      sbook['rating'])
 
 def update_all(gc, shelfari, goodreads):
     for isbn, shelfari_book in shelfari.iteritems():
         try:
             goodreads_book = goodreads[isbn]
         except KeyError:
-            print "!!!! Missing book: {}".format(shelfari_book['title'])
+            #print "!!!! Missing book: {}".format(shelfari_book['title'])
             continue
 
         print "Found book: {}".format(shelfari_book['title'])
