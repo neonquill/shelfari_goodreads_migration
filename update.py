@@ -7,6 +7,7 @@ import time
 import goodreads.client
 import goodreads.review
 import goodreads.book
+import fuzzywuzzy.process
 
 # XXX Make sure we never end up with duplicate dummy isbns.
 dummy_isbn = 0
@@ -180,13 +181,19 @@ def compare_books(gc, sbook, gbook):
         update_review(gc, gbook['review_id'], sbook['date_read'],
                       sbook['rating'], shelf)
 
+def find_by_title(title, choices):
+    print fuzzywuzzy.process.extract(title, choices)
+
 def update_all(gc, shelfari, goodreads):
+    all_goodreads_titles = goodreads['title'].keys()
+
     for isbn, shelfari_book in shelfari['isbn'].iteritems():
         try:
             goodreads_book = goodreads['isbn'][isbn]
         except KeyError:
             print "!!!! Missing book: {} ({})".format(isbn,
                                                       shelfari_book['title'])
+            find_by_title(shelfari_book['title'], all_goodreads_titles)
             continue
 
         # print "Found book: {}".format(shelfari_book['title'])
