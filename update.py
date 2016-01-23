@@ -57,6 +57,7 @@ def get_goodreads_books(gc):
         page += 1
         params = {
             'v': 2,
+            'shelf': '#ALL#',
             'per_page': 200,
             'page': page
         }
