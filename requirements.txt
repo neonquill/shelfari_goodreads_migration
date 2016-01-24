@@ -1,0 +1,4 @@
+goodreads
+arrow
+python-Levenshtein
+fuzzywuzzy
